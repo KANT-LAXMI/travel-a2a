@@ -1,0 +1,12 @@
+/* Login uses the same styles as Signup */
+@import './Signup.css';
+
+/* Forgot Password Link */
+.forgot-password-link {
+  text-align: right;
+  margin-top: 8px;
+}
+
+.forgot-password-link .form-link {
+  font-size: 0.85rem;
+}

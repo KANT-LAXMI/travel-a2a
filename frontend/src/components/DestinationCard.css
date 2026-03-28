@@ -1,0 +1,250 @@
+.destination-card-wiki {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 2px;
+  margin: 2rem 0;
+  box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.destination-card-wiki > div {
+  background: white;
+  border-radius: 18px;
+  padding: 2rem;
+}
+
+.destination-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.destination-card-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.wikipedia-link {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.wikipedia-link:hover {
+  color: #764ba2;
+  transform: translateX(5px);
+}
+
+.destination-card-content {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.destination-image-container {
+  position: relative;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  height: fit-content;
+}
+
+.destination-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.destination-image-container:hover .destination-image {
+  transform: scale(1.05);
+}
+
+.destination-info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.info-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 0.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.destination-summary {
+  background: linear-gradient(135deg, #f6f8fb 0%, #f0f4f8 100%);
+  padding: 1.2rem;
+  border-radius: 12px;
+  border-left: 4px solid #667eea;
+}
+
+.summary-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.destination-extract {
+  background: #fafafa;
+  padding: 1.2rem;
+  border-radius: 12px;
+  border-left: 4px solid #764ba2;
+}
+
+.extract-text {
+  font-size: 1rem;
+  color: #4a5568;
+  line-height: 1.8;
+  margin: 0;
+}
+
+.destination-coordinates {
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f9ff 100%);
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.coordinates-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.coordinate-item {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+  font-family: 'Courier New', monospace;
+}
+
+.related-topics {
+  background: #fff5f5;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.topics-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.topic-tag {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: default;
+}
+
+.topic-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.destination-card-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.source-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #718096;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.source-badge svg {
+  opacity: 0.7;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .destination-card-content {
+    grid-template-columns: 1fr;
+  }
+
+  .destination-image-container {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .destination-card-wiki > div {
+    padding: 1.5rem;
+  }
+
+  .destination-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .destination-card-title {
+    font-size: 1.5rem;
+  }
+
+  .destination-info-container {
+    gap: 1rem;
+  }
+
+  .summary-text {
+    font-size: 1rem;
+  }
+
+  .extract-text {
+    font-size: 0.95rem;
+  }
+}
+
+/* Loading Animation */
+.destination-card-wiki.loading {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}

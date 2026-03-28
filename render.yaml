@@ -1,0 +1,226 @@
+services:
+  # Frontend - React App
+  - type: web
+    name: travel-frontend
+    env: static
+    region: singapore
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build"
+    staticPublishPath: frontend/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+  # Backend API - Flask
+  - type: web
+    name: travel-api
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "gunicorn -w 4 -b 0.0.0.0:$PORT backend.api.app:app"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASSWORD
+        sync: false
+      - key: JWT_SECRET_KEY
+        sync: false
+      - key: JWT_REFRESH_SECRET_KEY
+        sync: false
+      - key: HOST_AGENT_URL
+        value: https://travel-host-agent.onrender.com
+      - key: CORS_ORIGINS
+        value: https://travel-frontend.onrender.com
+
+  # Host Agent - Main orchestrator
+  - type: web
+    name: travel-host-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.host_agent.entry"
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: PORT
+        value: 10000
+
+  # Budget Agent
+  - type: web
+    name: travel-budget-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.budget_agent"
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: PORT
+        value: 10001
+
+  # Places Agent
+  - type: web
+    name: travel-places-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.places_agent"
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: PORT
+        value: 10002
+
+  # Map Agent
+  - type: web
+    name: travel-map-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.map_agent"
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: PORT
+        value: 10003
+
+  # RAG Agent
+  - type: web
+    name: travel-rag-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.rag_agent"
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: PORT
+        value: 10004
+
+
+  # Budget Agent
+  - type: web
+    name: travel-budget-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.budget_agent"
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: PORT
+        value: 10001
+
+  # Places Agent
+  - type: web
+    name: travel-places-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.places_agent"
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: SERPAPI_API_KEY
+        sync: false
+      - key: PORT
+        value: 10002
+
+  # Map Agent
+  - type: web
+    name: travel-map-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.map_agent"
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: PORT
+        value: 10003
+
+  # RAG Agent
+  - type: web
+    name: travel-rag-agent
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: "pip install -r backend/api/requirements.txt"
+    startCommand: "python -m backend.agents.rag_agent"
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT
+        sync: false
+      - key: AZURE_OPENAI_API_VERSION
+        sync: false
+      - key: PORT
+        value: 10004
