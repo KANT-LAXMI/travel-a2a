@@ -3,7 +3,6 @@ services:
   - type: web
     name: travel-frontend
     env: static
-    region: singapore
     plan: free
     buildCommand: "cd frontend && npm install && npm run build"
     staticPublishPath: frontend/dist
@@ -71,83 +70,6 @@ services:
         sync: false
       - key: PORT
         value: 10000
-
-  # Budget Agent
-  - type: web
-    name: travel-budget-agent
-    env: python
-    region: singapore
-    plan: free
-    buildCommand: "pip install -r backend/api/requirements.txt"
-    startCommand: "python -m backend.agents.budget_agent"
-    envVars:
-      - key: AZURE_OPENAI_ENDPOINT
-        sync: false
-      - key: AZURE_OPENAI_API_KEY
-        sync: false
-      - key: AZURE_OPENAI_DEPLOYMENT
-        sync: false
-      - key: AZURE_OPENAI_API_VERSION
-        sync: false
-      - key: PORT
-        value: 10001
-
-  # Places Agent
-  - type: web
-    name: travel-places-agent
-    env: python
-    region: singapore
-    plan: free
-    buildCommand: "pip install -r backend/api/requirements.txt"
-    startCommand: "python -m backend.agents.places_agent"
-    envVars:
-      - key: AZURE_OPENAI_ENDPOINT
-        sync: false
-      - key: AZURE_OPENAI_API_KEY
-        sync: false
-      - key: AZURE_OPENAI_DEPLOYMENT
-        sync: false
-      - key: AZURE_OPENAI_API_VERSION
-        sync: false
-      - key: SERPAPI_API_KEY
-        sync: false
-      - key: PORT
-        value: 10002
-
-  # Map Agent
-  - type: web
-    name: travel-map-agent
-    env: python
-    region: singapore
-    plan: free
-    buildCommand: "pip install -r backend/api/requirements.txt"
-    startCommand: "python -m backend.agents.map_agent"
-    envVars:
-      - key: GOOGLE_API_KEY
-        sync: false
-      - key: PORT
-        value: 10003
-
-  # RAG Agent
-  - type: web
-    name: travel-rag-agent
-    env: python
-    region: singapore
-    plan: free
-    buildCommand: "pip install -r backend/api/requirements.txt"
-    startCommand: "python -m backend.agents.rag_agent"
-    envVars:
-      - key: AZURE_OPENAI_ENDPOINT
-        sync: false
-      - key: AZURE_OPENAI_API_KEY
-        sync: false
-      - key: AZURE_OPENAI_DEPLOYMENT
-        sync: false
-      - key: AZURE_OPENAI_API_VERSION
-        sync: false
-      - key: PORT
-        value: 10004
-
 
   # Budget Agent
   - type: web
