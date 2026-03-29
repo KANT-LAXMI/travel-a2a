@@ -662,10 +662,15 @@ def plan_trip():
     ========================
     
     Plans a trip using AI agents (budget, places, map, knowledge).
+    Falls back to simplified planner if host agent is not available.
+    Saves the plan to database with user_id if authenticated.
     
     Request:
         Method: POST
         Content-Type: application/json
+        Headers: {
+            "Authorization": "Bearer <access_token>" (optional)
+        }
         Body: {
             "query": "Plan a 5-day trip to Goa under 20000",
             "session_id": "optional-session-id"
@@ -675,14 +680,8 @@ def plan_trip():
         {
             "success": true,
             "session_id": "abc123...",
-            "budget": "Budget breakdown text",
-            "itinerary": [
-                {
-                    "day": "Day 1",
-                    "activities": ["8:00 AM - Activity 1", "10:00 AM - Activity 2"]
-                }
-            ],
-            "map_file": "travel_map_20260216_123456.html",
+            "budget": {...},
+            "itinerary": [...],
             "summary": "Full response text"
         }
     
@@ -694,6 +693,25 @@ def plan_trip():
     """
     print("\n" + "="*70)
     print("✈️  [PLAN-TRIP] Travel planning request received")
+    
+    # Try to get current user (optional authentication)
+    current_user = None
+    user_id = None
+    auth_header = request.headers.get('Authorization')
+    
+    if auth_header and auth_header.startswith('Bearer '):
+        token = auth_header.split(' ')[1]
+        try:
+            payload = decode_access_token(token)
+            if payload:
+                user_id = payload.get('user_id')
+                current_user = get_user_by_email(payload.get('email'))
+                print(f"👤 [PLAN-TRIP] Authenticated User: {current_user.email} (ID: {user_id})")
+        except Exception as e:
+            print(f"⚠️  [PLAN-TRIP] Token validation failed: {e}")
+    
+    if not current_user:
+        print("👤 [PLAN-TRIP] Anonymous user (no authentication)")
     
     data = request.get_json()
     query = data.get('query', '').strip()
@@ -708,20 +726,400 @@ def plan_trip():
     
     print(f"📝 [PLAN-TRIP] Query: {query}")
     
-    # Plan trip using A2A system
-    result = plan_trip_sync(query, session_id)
+    # Check if HOST_AGENT_URL is configured
+    host_agent_url = Config.HOST_AGENT_URL
     
-    # Add Wikipedia data if available from orchestrator
-    # The Wikipedia data will be included in the result from plan_trip_sync
+    # Try A2A system first if available
+    if host_agent_url and host_agent_url != 'http://localhost:10000':
+        print(f"🔗 [PLAN-TRIP] Using A2A host agent at {host_agent_url}")
+        try:
+            result = plan_trip_sync(query, session_id)
+            
+            if result['success']:
+                print(f"✅ [PLAN-TRIP] Trip planned successfully via A2A")
+                print("="*70 + "\n")
+                return jsonify(result), 200
+        except Exception as e:
+            print(f"⚠️  [PLAN-TRIP] A2A failed: {e}, falling back to simple planner")
+    
+    # Fallback to simplified planner
+    print("🔄 [PLAN-TRIP] Using simplified planner (serverless mode)")
+    from backend.travel.simple_planner import get_simple_planner
+    
+    planner = get_simple_planner()
+    result = planner.plan_trip(query, session_id, user_id=user_id)
     
     if result['success']:
-        print(f"✅ [PLAN-TRIP] Trip planned successfully")
+        print(f"✅ [PLAN-TRIP] Trip planned successfully via simple planner")
         print("="*70 + "\n")
         return jsonify(result), 200
     else:
         print(f"❌ [PLAN-TRIP] {result.get('message', 'Failed')}")
         print("="*70 + "\n")
-        return jsonify(result), 500
+        return jsonify(result), 400
+
+
+@app.route('/api/my-trips', methods=['GET'])
+@token_required
+def get_my_trips(current_user):
+    """
+    Get all trips for the authenticated user
+    
+    Request:
+        Method: GET
+        Headers: {
+            "Authorization": "Bearer <access_token>"
+        }
+    
+    Response (Success - 200):
+        {
+            "success": true,
+            "trips": [
+                {
+                    "id": "uuid",
+                    "destination": "Pune",
+                    "duration_days": 2,
+                    "status": "completed",
+                    "created_at": "2025-01-12",
+                    "pdf_url": "https://...",
+                    "user_query": "Plan 2 day trip to Pune"
+                }
+            ]
+        }
+    """
+    print("\n" + "="*70)
+    print("📋 [MY-TRIPS] Fetching trips for user")
+    print(f"👤 [MY-TRIPS] User: {current_user.email} (ID: {current_user.id})")
+    
+    try:
+        from backend.database.db_manager import TravelBuddyDB
+        db = TravelBuddyDB()
+        
+        trips = db.get_user_trips(current_user.id)
+        
+        print(f"✅ [MY-TRIPS] Found {len(trips)} trips")
+        print("="*70 + "\n")
+        
+        return jsonify({
+            'success': True,
+            'trips': trips
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ [MY-TRIPS] Error: {e}")
+        print("="*70 + "\n")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/trips/<trip_id>', methods=['DELETE'])
+@token_required
+def delete_trip(current_user, trip_id):
+    """
+    Delete a trip
+    
+    Request:
+        Method: DELETE
+        Headers: {
+            "Authorization": "Bearer <access_token>"
+        }
+    
+    Response (Success - 200):
+        {
+            "success": true,
+            "message": "Trip deleted successfully"
+        }
+    """
+    print("\n" + "="*70)
+    print(f"🗑️  [DELETE-TRIP] Deleting trip {trip_id}")
+    print(f"👤 [DELETE-TRIP] User: {current_user.email} (ID: {current_user.id})")
+    
+    try:
+        from backend.database.db_manager import TravelBuddyDB
+        db = TravelBuddyDB()
+        
+        # Verify trip belongs to user
+        success = db.delete_user_trip(trip_id, current_user.id)
+        
+        if success:
+            print(f"✅ [DELETE-TRIP] Trip deleted successfully")
+            print("="*70 + "\n")
+            return jsonify({
+                'success': True,
+                'message': 'Trip deleted successfully'
+            }), 200
+        else:
+            print(f"❌ [DELETE-TRIP] Trip not found or unauthorized")
+            print("="*70 + "\n")
+            return jsonify({
+                'success': False,
+                'message': 'Trip not found or unauthorized'
+            }), 404
+        
+    except Exception as e:
+        print(f"❌ [DELETE-TRIP] Error: {e}")
+        print("="*70 + "\n")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/trips/<trip_id>', methods=['GET'])
+@token_required
+def get_trip_details(current_user, trip_id):
+    """
+    Get full trip details including budget, itinerary, and map data
+    
+    Request:
+        Method: GET
+        Headers: {
+            "Authorization": "Bearer <access_token>"
+        }
+    
+    Response (Success - 200):
+        {
+            "success": true,
+            "trip": {
+                "destination": "Mumbai",
+                "duration_days": 3,
+                "budget": {...},
+                "itinerary": {...},
+                "map": {...}
+            }
+        }
+    """
+    print("\n" + "="*70)
+    print(f"📄 [GET-TRIP] Fetching trip details for {trip_id}")
+    print(f"👤 [GET-TRIP] User: {current_user.email} (ID: {current_user.id})")
+    
+    try:
+        from backend.database.db_manager import TravelBuddyDB
+        db = TravelBuddyDB()
+        
+        # Get the trip
+        trip = db.get_travel_plan(trip_id)
+        
+        if not trip:
+            print(f"❌ [GET-TRIP] Trip not found")
+            print("="*70 + "\n")
+            return jsonify({
+                'success': False,
+                'message': 'Trip not found'
+            }), 404
+        
+        # Verify ownership
+        if trip.get('user_id') != current_user.id:
+            print(f"❌ [GET-TRIP] Unauthorized access attempt")
+            print("="*70 + "\n")
+            return jsonify({
+                'success': False,
+                'message': 'Unauthorized'
+            }), 403
+        
+        # Format the response to match PDF generator expectations
+        formatted_trip = {
+            'destination': trip.get('destination') or 'Unknown',
+            'duration_days': trip.get('duration_days') or 0,
+            'summary': trip.get('summary') or f"Explore the beauty and culture of {trip.get('destination', 'Unknown')}",
+            'budget': {},
+            'itinerary': {
+                'days': [],
+                'summary': trip.get('summary') or f"Explore the beauty and culture of {trip.get('destination', 'Unknown')}",
+                'tips': trip.get('tips') or [
+                    "Plan your activities in advance to make the most of your time",
+                    "Keep some buffer time between activities for travel",
+                    "Try local cuisine and street food for authentic experience",
+                    "Carry cash and small change for local vendors"
+                ]
+            },
+            'map': {
+                'locations': []
+            },
+            'pdf_url': trip.get('pdf_url')
+        }
+        
+        # Format budget
+        if trip.get('budget'):
+            budget = trip['budget']
+            formatted_trip['budget'] = {
+                'transport': float(budget.get('transport', 0)),
+                'accommodation': float(budget.get('accommodation', 0)),
+                'food': float(budget.get('food', 0)),
+                'activities': float(budget.get('activities', 0)),
+                'miscellaneous': float(budget.get('miscellaneous', 0)),
+                'total': float(budget.get('total', 0)),
+                'currency': budget.get('currency', 'INR')
+            }
+        
+        # Format itinerary days
+        for day in trip.get('itinerary_days', []):
+            formatted_day = {
+                'day': day.get('day_number'),
+                'date': day.get('date'),
+                'activities': []
+            }
+            
+            for activity in day.get('activities', []):
+                formatted_activity = {
+                    'time': activity.get('time'),
+                    'title': activity.get('title'),
+                    'description': activity.get('description'),
+                    'cost': activity.get('cost'),
+                    'location': {
+                        'name': activity.get('location_name'),
+                        'latitude': activity.get('location_latitude'),
+                        'longitude': activity.get('location_longitude')
+                    }
+                }
+                formatted_day['activities'].append(formatted_activity)
+            
+            formatted_trip['itinerary']['days'].append(formatted_day)
+        
+        # Format map locations
+        if trip.get('map'):
+            for location in trip['map'].get('locations', []):
+                formatted_location = {
+                    'name': location.get('name'),
+                    'latitude': location.get('latitude'),
+                    'longitude': location.get('longitude'),
+                    'day': location.get('day'),
+                    'time': location.get('time'),
+                    'description': location.get('description'),
+                    'image': location.get('image_url'),
+                    'extract': location.get('description')
+                }
+                formatted_trip['map']['locations'].append(formatted_location)
+        
+        print(f"✅ [GET-TRIP] Trip details retrieved successfully")
+        print("="*70 + "\n")
+        
+        return jsonify({
+            'success': True,
+            'trip': formatted_trip
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ [GET-TRIP] Error: {e}")
+        print("="*70 + "\n")
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
+
+
+@app.route('/api/test-pdf', methods=['GET'])
+def test_pdf():
+    """Test PDF generation capabilities"""
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    results = {
+        'imports': {},
+        'environment': {},
+        'test_generation': None
+    }
+    
+    # Test imports
+    try:
+        import reportlab
+        results['imports']['reportlab'] = f"✅ {reportlab.__version__}"
+    except Exception as e:
+        results['imports']['reportlab'] = f"❌ {str(e)}"
+    
+    try:
+        from PIL import Image
+        results['imports']['PIL'] = f"✅ Available"
+    except Exception as e:
+        results['imports']['PIL'] = f"❌ {str(e)}"
+    
+    try:
+        import requests
+        results['imports']['requests'] = f"✅ {requests.__version__}"
+    except Exception as e:
+        results['imports']['requests'] = f"❌ {str(e)}"
+    
+    # Check environment
+    results['environment']['BLOB_READ_WRITE_TOKEN'] = '✅ Set' if os.getenv('BLOB_READ_WRITE_TOKEN') else '❌ Not set'
+    results['environment']['DATABASE_URL'] = '✅ Set' if os.getenv('DATABASE_URL') else '❌ Not set'
+    
+    # Test PDF generation
+    try:
+        from backend.mcp_tools.filesystem_mcp_service.filesystem_api import FilesystemAPI
+        import tempfile
+        import shutil
+        
+        temp_dir = tempfile.mkdtemp()
+        
+        try:
+            fs_api = FilesystemAPI(base_dir=temp_dir)
+            
+            # Test data
+            test_data = {
+                'destination': 'Mumbai',
+                'duration_days': 2,
+                'budget': {
+                    'transport': 5000,
+                    'accommodation': 6000,
+                    'food': 3000,
+                    'activities': 4000,
+                    'miscellaneous': 1000,
+                    'total': 19000,
+                    'currency': 'INR'
+                },
+                'itinerary': {
+                    'days': [
+                        {
+                            'day': 1,
+                            'activities': [
+                                {
+                                    'time': '9:00 AM',
+                                    'title': 'Visit Gateway of India',
+                                    'description': 'Iconic monument',
+                                    'location': {'name': 'Gateway of India'}
+                                }
+                            ]
+                        }
+                    ],
+                    'total_days': 2
+                },
+                'map': {
+                    'locations': [
+                        {
+                            'name': 'Gateway of India',
+                            'latitude': 18.9220,
+                            'longitude': 72.8347,
+                            'day': 1,
+                            'time': '9:00 AM',
+                            'description': 'Historic monument'
+                        }
+                    ]
+                }
+            }
+            
+            pdf_result = fs_api.save_plan_as_pdf(
+                destination='Mumbai',
+                duration_days=2,
+                plan_data=test_data,
+                session_id='test'
+            )
+            
+            if pdf_result.get('success'):
+                results['test_generation'] = f"✅ PDF generated: {pdf_result['filename']} ({pdf_result['size_kb']} KB)"
+            else:
+                results['test_generation'] = f"❌ Failed: {pdf_result.get('error')}"
+                
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            
+    except Exception as e:
+        results['test_generation'] = f"❌ Exception: {str(e)}"
+        logger.error(f"PDF generation test failed: {e}", exc_info=True)
+    
+    return jsonify(results), 200
 
 
 # ============================================================================

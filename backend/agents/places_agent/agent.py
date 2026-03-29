@@ -310,18 +310,40 @@ TIPS:
         return activity_text[:50].strip()
     
     def _extract_destination(self, query: str) -> str:
-        """Extract destination from query"""
-        # Common patterns
+        """Extract destination from query using LLM for better accuracy"""
+        # Try regex patterns first (fast path)
         patterns = [
-            r'(?:trip to|visit|plan|travel to)\s+([A-Z][A-Za-z\s]+?)(?:\s|$)',
-            r'(?:in|at)\s+([A-Z][A-Za-z]+)',
+            r'(?:trip to|visit|plan|travel to|going to|headed to)\s+([A-Z][A-Za-z\s]+?)(?:\s+for|\s+under|\s+in|\s+with|$)',
+            r'(?:in|at)\s+([A-Z][A-Za-z\s]+?)(?:\s+for|\s+under|\s+in|\s+with|$)',
+            r'([A-Z][A-Za-z\s]+?)(?:\s+trip|\s+tour|\s+vacation)',
         ]
         
         for pattern in patterns:
-            match = re.search(pattern, query)
+            match = re.search(pattern, query, re.IGNORECASE)
             if match:
-                return match.group(1).strip()
+                destination = match.group(1).strip()
+                # Clean up common words
+                destination = re.sub(r'\s+(for|under|in|with|trip|tour|vacation)$', '', destination, flags=re.IGNORECASE)
+                if destination and len(destination) > 2:
+                    logger.info(f"📍 Extracted destination via regex: {destination}")
+                    return destination.title()
         
+        # Fallback: Use LLM to extract destination
+        logger.info("🤖 Using LLM to extract destination...")
+        try:
+            system = "You are a travel assistant. Extract ONLY the destination city/place name from the query. Return just the name, nothing else."
+            prompt = f"Query: {query}\n\nDestination:"
+            
+            response = ask_llm(system, prompt).strip()
+            # Clean up the response
+            destination = re.sub(r'[^\w\s]', '', response).strip()
+            if destination and len(destination) > 2:
+                logger.info(f"📍 Extracted destination via LLM: {destination}")
+                return destination.title()
+        except Exception as e:
+            logger.warning(f"LLM extraction failed: {e}")
+        
+        logger.warning("⚠️ Could not extract destination, using 'Unknown Destination'")
         return "Unknown Destination"
     
     def _create_structured_response(

@@ -43,6 +43,9 @@ CREATE TABLE IF NOT EXISTS travel_plans (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
+    -- User association
+    user_id INTEGER,  -- Link to users table
+    
     -- Request metadata
     user_query TEXT NOT NULL,
     session_id VARCHAR(255),
@@ -53,6 +56,10 @@ CREATE TABLE IF NOT EXISTS travel_plans (
     destination VARCHAR(255),
     duration_days INTEGER,
     
+    -- PDF storage
+    pdf_url TEXT,  -- URL/path to generated PDF
+    pdf_filename VARCHAR(500),
+    
     -- Execution metadata
     execution_time_ms INTEGER,
     llm_tokens_used INTEGER,
@@ -61,7 +68,9 @@ CREATE TABLE IF NOT EXISTS travel_plans (
     -- Full response
     display_text TEXT,
     display_format VARCHAR(50) DEFAULT 'markdown',
-    error_message TEXT
+    error_message TEXT,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Budget breakdown table
@@ -191,6 +200,7 @@ CREATE TABLE IF NOT EXISTS knowledge_sources (
 );
 
 -- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_travel_plans_user ON travel_plans(user_id);
 CREATE INDEX IF NOT EXISTS idx_travel_plans_session ON travel_plans(session_id);
 CREATE INDEX IF NOT EXISTS idx_travel_plans_created ON travel_plans(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_travel_plans_destination ON travel_plans(destination);

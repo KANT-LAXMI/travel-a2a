@@ -341,3 +341,63 @@ class TravelBuddyDB:
             'last_plan': self.get_last_plan(session_id),
             'session_id': session_id
         }
+
+    def get_user_trips(self, user_id: int) -> List[Dict]:
+        """
+        Get all trips for a specific user
+        
+        Args:
+            user_id: User ID
+            
+        Returns:
+            List of trip dictionaries
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute("""
+                        SELECT 
+                            id,
+                            destination,
+                            duration_days,
+                            status,
+                            created_at,
+                            pdf_url,
+                            pdf_filename,
+                            user_query
+                        FROM travel_plans
+                        WHERE user_id = %s
+                        ORDER BY created_at DESC
+                    """, (user_id,))
+                    
+                    trips = cursor.fetchall()
+                    return [dict(trip) for trip in trips]
+                    
+        except Exception as e:
+            logger.error(f"Error fetching user trips: {e}")
+            return []
+    
+    def delete_user_trip(self, trip_id: str, user_id: int) -> bool:
+        """
+        Delete a trip (only if it belongs to the user)
+        
+        Args:
+            trip_id: Trip ID
+            user_id: User ID
+            
+        Returns:
+            True if deleted, False if not found or unauthorized
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute("""
+                        DELETE FROM travel_plans
+                        WHERE id = %s AND user_id = %s
+                    """, (trip_id, user_id))
+                    
+                    return cursor.rowcount > 0
+                    
+        except Exception as e:
+            logger.error(f"Error deleting trip: {e}")
+            return False

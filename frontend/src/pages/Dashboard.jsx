@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import TravelMap from "../components/TravelMap";
 import DestinationCard from "../components/DestinationCard";
+import { generateTripPDF } from "../utils/pdfGenerator";
 import "./Dashboard.css";
 
 const Dashboard = () => {
@@ -13,6 +14,26 @@ const Dashboard = () => {
   const [wikipediaData, setWikipediaData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
+
+  const handleGeneratePDF = async () => {
+    if (!tripData) return;
+    
+    setGeneratingPDF(true);
+    try {
+      const result = await generateTripPDF(tripData);
+      if (result.success) {
+        alert(`PDF generated successfully: ${result.filename}`);
+      } else {
+        alert(`Failed to generate PDF: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      alert('Failed to generate PDF. Please try again.');
+    } finally {
+      setGeneratingPDF(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -29,10 +50,12 @@ const Dashboard = () => {
     setSelectedDay(null);
 
     try {
+      const token = localStorage.getItem("access_token");
       const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/plan-trip`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
         },
         body: JSON.stringify({ query: query }),
       });
@@ -41,17 +64,74 @@ const Dashboard = () => {
       console.log("API Response:", data);
 
       if (data.success) {
-        const responseText = data.raw_response || data.summary;
-        console.log("Response text length:", responseText?.length);
-        console.log("Response preview:", responseText?.substring(0, 200));
+        // New structured response format
+        const parsed = {
+          budget: [],
+          itinerary: [],
+          locations: [],
+          totalBudget: 0,
+        };
 
-        const parsed = parseResponse(responseText);
+        // Parse budget - FIX: values are coming as decimals (0.6 instead of 6000)
+        if (data.budget) {
+          const budget = data.budget;
+          console.log("Raw budget from API:", budget);
+          
+          // Check if values are too small (likely divided by 10000)
+          const needsMultiplication = budget.total && budget.total < 100;
+          const multiplier = needsMultiplication ? 10000 : 1;
+          
+          console.log(`Budget multiplier: ${multiplier} (needsMultiplication: ${needsMultiplication})`);
+          
+          parsed.budget = [
+            { category: "Transport", amount: (budget.transport || 0) * multiplier },
+            { category: "Accommodation", amount: (budget.accommodation || 0) * multiplier },
+            { category: "Food", amount: (budget.food || 0) * multiplier },
+            { category: "Activities", amount: (budget.activities || 0) * multiplier },
+            { category: "Miscellaneous", amount: (budget.miscellaneous || 0) * multiplier },
+          ].filter((item) => item.amount > 0);
+          parsed.totalBudget = (budget.total || 0) * multiplier;
+          
+          console.log("Corrected budget:", parsed.budget);
+          console.log("Corrected total:", parsed.totalBudget);
+        }
+
+        // Parse itinerary
+        if (data.itinerary && data.itinerary.days) {
+          data.itinerary.days.forEach((day) => {
+            const dayActivities = day.activities.map((activity) => ({
+              time: activity.time || "",
+              place: activity.location?.name || activity.title || "",
+              description: activity.description || "",
+            }));
+            parsed.itinerary.push({
+              day: `Day ${day.day}`,
+              activities: dayActivities,
+            });
+          });
+        }
+
+        // Parse map locations
+        if (data.map && data.map.locations) {
+          parsed.locations = data.map.locations.filter(
+            (loc) => loc.latitude && loc.longitude
+          );
+        }
+
         console.log("Parsed data:", parsed);
-        console.log("Budget items:", parsed.budget.length);
-        console.log("Itinerary days:", parsed.itinerary.length);
-        console.log("Locations:", parsed.locations.length);
-
+        console.log("Budget array:", parsed.budget);
+        console.log("Total budget:", parsed.totalBudget);
+        console.log("Locations:", parsed.locations);
+        console.log("Itinerary:", parsed.itinerary);
+        console.log("PDF URL:", data.pdf_url);
+        
+        // Add PDF URL to parsed data
+        if (data.pdf_url) {
+          parsed.pdf_url = data.pdf_url;
+        }
+        
         setTripData(parsed);
+        console.log("tripData state set!");
         
         // Set Wikipedia data if available
         if (data.wikipedia) {
@@ -69,108 +149,6 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  const parseResponse = (responseText) => {
-    const result = {
-      budget: [],
-      itinerary: [],
-      locations: [],
-      totalBudget: 0,
-    };
-
-    try {
-      console.log("Starting to parse response...");
-      console.log("Response length:", responseText.length);
-
-      // The response contains multiple JSON objects separated by markdown
-      // Extract all JSON objects from the response
-      const jsonObjects = [];
-
-      // Find all JSON objects in the response
-      let startIndex = 0;
-      while (startIndex < responseText.length) {
-        const openBrace = responseText.indexOf("{", startIndex);
-        if (openBrace === -1) break;
-
-        // Find matching closing brace
-        let braceCount = 0;
-        let endIndex = openBrace;
-        for (let i = openBrace; i < responseText.length; i++) {
-          if (responseText[i] === "{") braceCount++;
-          else if (responseText[i] === "}") {
-            braceCount--;
-            if (braceCount === 0) {
-              endIndex = i + 1;
-              break;
-            }
-          }
-        }
-
-        if (braceCount === 0) {
-          const jsonStr = responseText.substring(openBrace, endIndex);
-          try {
-            const obj = JSON.parse(jsonStr);
-            jsonObjects.push(obj);
-            console.log("Found JSON object with data_type:", obj.data_type);
-          } catch (e) {
-            // Skip invalid JSON
-          }
-        }
-
-        startIndex = endIndex + 1;
-      }
-
-      console.log("Found", jsonObjects.length, "JSON objects");
-
-      // Process each JSON object based on its data_type
-      jsonObjects.forEach((obj) => {
-        if (obj.data_type === "budget" && obj.data?.budget) {
-          const budget = obj.data.budget;
-          result.budget = [
-            { category: "Transport", amount: budget.transport || 0 },
-            { category: "Accommodation", amount: budget.accommodation || 0 },
-            { category: "Food", amount: budget.food || 0 },
-            { category: "Activities", amount: budget.activities || 0 },
-            { category: "Miscellaneous", amount: budget.miscellaneous || 0 },
-          ].filter((item) => item.amount > 0);
-          result.totalBudget = budget.total || 0;
-          console.log("Budget parsed:", result.budget);
-        }
-
-        if (obj.data_type === "itinerary" && obj.data?.itinerary?.days) {
-          const days = obj.data.itinerary.days;
-          days.forEach((day) => {
-            const dayActivities = day.activities.map((activity) => ({
-              time: activity.time || "",
-              place: (activity.location?.name || activity.title || "").replace(
-                /\*\*/g,
-                "",
-              ),
-              description: (activity.description || "").replace(/\*\*/g, ""),
-            }));
-            result.itinerary.push({
-              day: `Day ${day.day}`,
-              activities: dayActivities,
-            });
-          });
-          console.log("Itinerary parsed:", result.itinerary.length, "days");
-        }
-
-        if (obj.data_type === "map" && obj.data?.map?.locations) {
-          result.locations = obj.data.map.locations.filter(
-            (loc) => loc.latitude && loc.longitude,
-          );
-          console.log("Locations parsed:", result.locations.length);
-        }
-      });
-    } catch (error) {
-      console.error("Error parsing response:", error);
-      console.log("Response text preview:", responseText.substring(0, 500));
-    }
-
-    console.log("Final parsed result:", result);
-    return result;
   };
 
   const handleDayClick = (day) => {
@@ -202,8 +180,7 @@ const Dashboard = () => {
 
         <nav className="dashboard-nav">
           <a href="/dashboard">Home</a>
-          <a href="#destinations">Destinations</a>
-          <a href="#trips">My Trips</a>
+          <a href="/my-trips">My Trips</a>
           <a href="/recommendations">Recommendations</a>
           <a href="/about">About</a>
         </nav>
@@ -267,6 +244,17 @@ const Dashboard = () => {
         {/* Trip Results */}
         {tripData && !loading && (
           <section className="trip-results">
+            {/* PDF Download Button */}
+            <div className="pdf-download-section">
+              <button 
+                onClick={handleGeneratePDF}
+                disabled={generatingPDF}
+                className="btn-download-pdf"
+              >
+                {generatingPDF ? '⏳ Generating PDF...' : '📄 Download Trip Plan PDF'}
+              </button>
+            </div>
+
             {/* Wikipedia Destination Card */}
             {wikipediaData && <DestinationCard wikipediaData={wikipediaData} />}
 

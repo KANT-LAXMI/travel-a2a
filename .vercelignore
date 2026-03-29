@@ -1,0 +1,14 @@
+backend/database/travel_buddy.db
+backend/data/vector_db/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+.venv
+node_modules/
+.DS_Store
+*.log

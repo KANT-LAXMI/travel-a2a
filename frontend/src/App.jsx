@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import Dashboard from './pages/Dashboard'
 import Recommendations from './pages/Recommendations'
 import About from './pages/About'
+import MyTrips from './pages/MyTrips'
 import './App.css'
 
 // Protected Route Component
@@ -81,6 +82,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <About />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/my-trips" 
+            element={
+              <ProtectedRoute>
+                <MyTrips />
               </ProtectedRoute>
             } 
           />

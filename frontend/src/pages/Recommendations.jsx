@@ -76,7 +76,6 @@ const Recommendations = () => {
 
         <nav className="dashboard-nav">
           <a href="/dashboard">Home</a>
-          <a href="#destinations">Destinations</a>
           <a href="#trips">My Trips</a>
           <a href="/recommendations" className="active">Recommendations</a>
           <a href="/about">About</a>

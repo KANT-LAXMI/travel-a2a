@@ -1,0 +1,441 @@
+# 🧠 SEMANTIC KERNEL INTEGRATION GUIDE
+
+## 🎯 What Changed?
+
+### BEFORE: Static Query Router ❌
+```
+User Query → QueryRouter → IF/ELSE logic → Single route
+- Binary classification (trip OR knowledge)
+- Hardcoded routing rules
+- Cannot handle complex queries
+- Manual orchestration logic
+```
+
+### AFTER: AI Orchestration ✅
+```
+User Query → SK Planner → AI Reasoning → Dynamic multi-agent execution
+- Multi-step reasoning
+- Automatic agent selection
+- Handles complex multi-intent queries
+- Self-orchestrating system
+```
+
+---
+
+## 📁 Files Changed
+
+### ✨ NEW FILES
+1. **`agents/host_agent/sk_planner.py`**
+   - Main SK Planner wrapper
+   - Initializes Semantic Kernel
+   - Configures Azure OpenAI
+   - Handles orchestration logic
+
+2. **`agents/host_agent/sk_plugins.py`**
+   - SK Plugin definitions
+   - TripPlanningPlugin (Budget/Places/Map)
+   - KnowledgeQAPlugin (RAG)
+   - Exposes agents as SK functions
+
+### 🔥 REFACTORED
+3. **`agents/host_agent/orchestrator.py`**
+   - Removed QueryRouter dependency
+   - Uses SKPlanner for orchestration
+   - Simplified invoke() method
+   - AI-driven decision making
+
+4. **`agents/host_agent/entry.py`**
+   - Updated initialization
+   - Better error handling
+   - Enhanced logging
+
+### ❌ DELETED
+5. **`agents/host_agent/query_router.py`**
+   - No longer needed
+   - Replaced by SK Planner
+
+### ✏️ UPDATED
+6. **`requirements.txt`**
+   - Added: `semantic-kernel>=1.0.0`
+
+---
+
+## 🚀 Installation Steps
+
+### 1. Install Dependencies
+```bash
+pip install semantic-kernel --break-system-packages
+```
+
+### 2. File Structure
+```
+your_project/
+├── agents/
+│   └── host_agent/
+│       ├── entry.py              # ✏️ Updated
+│       ├── orchestrator.py       # 🔥 Refactored
+│       ├── sk_planner.py         # ✨ NEW
+│       ├── sk_plugins.py         # ✨ NEW
+│       ├── agent_connect.py      # ✅ No change
+│       └── query_router.py       # ❌ DELETE THIS
+```
+
+### 3. Copy Files to Your Project
+
+**Copy these NEW files:**
+```bash
+# Copy sk_planner.py to your project
+cp sk_planner.py agents/host_agent/
+
+# Copy sk_plugins.py to your project
+cp sk_plugins.py agents/host_agent/
+
+# Copy updated orchestrator.py
+cp orchestrator.py agents/host_agent/
+
+# Copy updated entry.py
+cp entry.py agents/host_agent/
+```
+
+**Delete old file:**
+```bash
+rm agents/host_agent/query_router.py
+```
+
+### 4. Verify .env Configuration
+Make sure your `.env` has Azure OpenAI credentials:
+```bash
+AZURE_OPENAI_API_KEY=your_key_here
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
+AZURE_OPENAI_DEPLOYMENT=your_deployment_name
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+```
+
+---
+
+## 🎮 Usage Examples
+
+### Example 1: Simple Trip Planning
+**Query:** "Plan a 2-day Goa trip under 15k"
+
+**SK Planner Reasoning:**
+```
+User wants trip planning
+→ Need: Budget, Itinerary, Map
+→ Call: plan_trip_budget()
+→ Call: plan_trip_itinerary()
+→ Call: create_trip_map()
+→ Combine results
+```
+
+**Output:** Complete trip plan with budget + itinerary + map
+
+---
+
+### Example 2: Knowledge Question
+**Query:** "What challenges exist in travel planning?"
+
+**SK Planner Reasoning:**
+```
+User asking for information
+→ Need: Knowledge from documents
+→ Call: answer_knowledge_question()
+```
+
+**Output:** RAG-based answer from PDF documents
+
+---
+
+### Example 3: Complex Multi-Intent Query 🔥
+**Query:** "Plan a Varanasi trip AND tell me about challenges in itinerary planning"
+
+**SK Planner Reasoning:**
+```
+User wants BOTH trip planning AND knowledge
+→ Step 1: Trip Planning
+  → Call: plan_trip_budget()
+  → Call: plan_trip_itinerary()
+  → Call: create_trip_map()
+→ Step 2: Knowledge Retrieval
+  → Call: answer_knowledge_question("challenges in itinerary planning")
+→ Combine all results
+```
+
+**Output:** Complete trip plan + challenges analysis
+
+**🎉 THIS WAS IMPOSSIBLE WITH QUERY ROUTER!**
+
+---
+
+## 🧪 Testing
+
+### Start All Agents
+```bash
+# Terminal 1: Budget Agent
+python -m agents.budget_agent
+
+# Terminal 2: Places Agent
+python -m agents.places_agent
+
+# Terminal 3: Map Agent
+python -m agents.map_agent
+
+# Terminal 4: RAG Agent
+python -m agents.rag_agent
+
+# Terminal 5: Host Agent (with SK Planner)
+python -m agents.host_agent.entry
+
+# Terminal 6: CLI Client
+python -m app.cmd.cmd
+```
+
+### Test Queries
+```bash
+# Test 1: Trip planning
+> Plan a 2-day Goa trip under 15k
+
+# Test 2: Knowledge question
+> What are the challenges in travel planning?
+
+# Test 3: Complex multi-intent
+> Plan a Varanasi trip and tell me about challenges
+
+# Test 4: Multiple questions
+> Create budget for Mumbai and explain itinerary challenges
+```
+
+---
+
+## 📊 Architecture Comparison
+
+### BEFORE: Static Router
+```
+┌─────────────┐
+│ User Query  │
+└──────┬──────┘
+       │
+       ▼
+┌─────────────────┐
+│ Query Router    │  ← Hardcoded IF/ELSE
+│ (ask_llm)       │
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+[Trip]    [Knowledge]
+ ├─Budget    └─RAG
+ ├─Places
+ └─Map
+```
+
+### AFTER: AI Orchestration
+```
+┌─────────────┐
+│ User Query  │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────┐
+│ SK Planner           │  ← AI Reasoning
+│ - Understands intent │
+│ - Plans execution    │
+│ - Auto-selects tools │
+└──────┬───────────────┘
+       │
+   ┌───┴───┐
+   │  AI   │  Decides dynamically:
+   │ Brain │  - Which agents?
+   └───┬───┘  - What order?
+       │      - How to combine?
+       │
+    ───┴─────────────────
+    │    │    │    │
+    ▼    ▼    ▼    ▼
+ Budget Places Map  RAG
+```
+
+---
+
+## 🔍 How SK Planner Works
+
+### 1. Query Analysis
+SK Planner uses Azure OpenAI to understand:
+- What is the user asking for?
+- What information is needed?
+- Which agents can help?
+
+### 2. Function Discovery
+SK automatically discovers available functions:
+```python
+TripPlanning.plan_trip_budget()
+TripPlanning.plan_trip_itinerary()
+TripPlanning.create_trip_map()
+Knowledge.answer_knowledge_question()
+```
+
+### 3. Automatic Orchestration
+SK decides:
+- Which functions to call
+- In what order
+- How to pass parameters
+- How to combine results
+
+### 4. Result Synthesis
+SK combines all agent responses into a coherent final answer.
+
+---
+
+## 🎯 Key Benefits
+
+### 1. No More Hardcoded Logic
+- ❌ Before: `if "trip" in query: call_budget_agent()`
+- ✅ After: SK decides automatically
+
+### 2. Handles Complex Queries
+- ❌ Before: "Plan trip AND tell challenges" → BREAKS
+- ✅ After: SK calls both trip + knowledge agents
+
+### 3. Future-Proof
+- ❌ Before: Add new agent = Update routing code
+- ✅ After: Add new agent = Just register SK plugin
+
+### 4. Self-Documenting
+- SK plugins have rich descriptions
+- Functions are auto-discoverable
+- No manual routing documentation needed
+
+### 5. Scalable
+- Add 10 more agents? No problem.
+- SK will figure out which to use.
+
+---
+
+## 🐛 Troubleshooting
+
+### Issue 1: "semantic-kernel not found"
+```bash
+pip install semantic-kernel --break-system-packages
+```
+
+### Issue 2: "Azure OpenAI credentials error"
+Check your `.env` file:
+```bash
+AZURE_OPENAI_API_KEY=...
+AZURE_OPENAI_ENDPOINT=...
+AZURE_OPENAI_DEPLOYMENT=...
+```
+
+### Issue 3: "No agents discovered"
+Make sure all agents are running:
+```bash
+python -m agents.budget_agent  # Port 10001
+python -m agents.places_agent  # Port 10002
+python -m agents.map_agent     # Port 10003
+python -m agents.rag_agent     # Port 10004
+```
+
+### Issue 4: SK Planner not calling functions
+Enable debug logging:
+```python
+logging.basicConfig(level=logging.DEBUG)
+```
+
+Look for:
+- "SK Function: [name] called"
+- "Functions called: [list]"
+
+---
+
+## 🎓 Learning Resources
+
+### Semantic Kernel Docs
+- https://learn.microsoft.com/en-us/semantic-kernel/
+
+### Key Concepts
+1. **Kernel**: Main SK coordinator
+2. **Plugins**: Groups of related functions
+3. **Functions**: Individual callable operations
+4. **Planner**: AI that orchestrates function calls
+5. **Auto-invocation**: SK calls functions automatically
+
+---
+
+## 🚀 Next Steps
+
+### 1. Test Complex Queries
+Try queries that combine multiple intents:
+- "Plan X AND tell me Y"
+- "Create budget, itinerary, and explain challenges"
+
+### 2. Add More Agents
+SK makes it easy to scale:
+1. Create new agent
+2. Create SK plugin for it
+3. Register plugin
+4. Done! SK will use it automatically
+
+### 3. Monitor Performance
+Watch logs to see:
+- Which functions SK calls
+- Order of execution
+- How results are combined
+
+### 4. Optimize Prompts
+Tune plugin descriptions for better SK decisions.
+
+---
+
+## 📈 Migration Checklist
+
+- [ ] Install semantic-kernel
+- [ ] Copy new files (sk_planner.py, sk_plugins.py)
+- [ ] Update orchestrator.py and entry.py
+- [ ] Delete query_router.py
+- [ ] Verify .env has Azure OpenAI credentials
+- [ ] Start all agents
+- [ ] Test simple queries
+- [ ] Test complex multi-intent queries
+- [ ] Celebrate! 🎉
+
+---
+
+## 💡 Pro Tips
+
+1. **Rich Function Descriptions**
+   - Write detailed descriptions in `@kernel_function` decorators
+   - SK uses these to decide when to call functions
+
+2. **Test Incrementally**
+   - Start with simple queries
+   - Build up to complex ones
+   - Check logs at each step
+
+3. **Monitor Function Calls**
+   - Enable logging
+   - Watch which functions SK chooses
+   - Tune descriptions if needed
+
+4. **Error Handling**
+   - SK handles agent failures gracefully
+   - Check logs for troubleshooting
+
+---
+
+## 🎉 Success Criteria
+
+You'll know it's working when:
+
+✅ Simple trip queries work (budget + itinerary + map)
+✅ Knowledge questions work (RAG answers)
+✅ Complex multi-intent queries work (both trip + knowledge)
+✅ Logs show "SK Function: [name] called"
+✅ No more "query_router" in logs
+✅ System feels more intelligent and flexible
+
+---
+
+**🔥 YOU NOW HAVE TRUE AI ORCHESTRATION! 🔥**
+
+The system will automatically reason about queries and orchestrate agents intelligently, without any hardcoded routing logic.

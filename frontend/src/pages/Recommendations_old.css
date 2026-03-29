@@ -1,0 +1,373 @@
+.recommendations-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+}
+
+.recommendations-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 60px 40px;
+}
+
+.search-section {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.page-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.page-subtitle {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 40px;
+}
+
+.search-form {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.search-input-group {
+  display: flex;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.search-input {
+  flex: 1;
+  padding: 20px 24px;
+  border: none;
+  font-size: 1.1rem;
+  outline: none;
+}
+
+.btn-search {
+  padding: 20px 40px;
+  background: #2196F3;
+  color: white;
+  border: none;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.btn-search:hover {
+  background: #1976D2;
+}
+
+.btn-search:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.error-message {
+  max-width: 700px;
+  margin: 0 auto 40px;
+  padding: 20px 24px;
+  background: #ffebee;
+  border-left: 4px solid #f44336;
+  border-radius: 8px;
+  color: #c62828;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 500;
+}
+
+.error-icon {
+  font-size: 1.5rem;
+}
+
+.results-section {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.results-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.results-count {
+  font-size: 1rem;
+  color: #666;
+  background: white;
+  padding: 8px 16px;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.category-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 12px 24px;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-btn:hover {
+  border-color: #2196F3;
+  color: #2196F3;
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: #2196F3;
+  border-color: #2196F3;
+  color: white;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.places-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 32px;
+}
+
+.place-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.place-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.place-image-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+}
+
+.place-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.place-card:hover .place-image {
+  transform: scale(1.1);
+}
+
+.place-type-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.place-type-badge.hotel {
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+}
+
+.place-type-badge.monument {
+  background: rgba(156, 39, 176, 0.9);
+  color: white;
+}
+
+.place-type-badge.attraction {
+  background: rgba(255, 152, 0, 0.9);
+  color: white;
+}
+
+.place-content {
+  padding: 24px;
+}
+
+.place-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+}
+
+.place-coordinates {
+  font-size: 0.9rem;
+  color: #999;
+  margin-bottom: 16px;
+}
+
+.place-description {
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.btn-view-map {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #f5f7fa;
+  color: #2196F3;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-view-map:hover {
+  background: #2196F3;
+  color: white;
+  transform: translateX(4px);
+}
+
+.no-results {
+  text-align: center;
+  padding: 80px 20px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.no-results-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 16px;
+}
+
+.no-results p {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 100px 20px;
+}
+
+.empty-icon {
+  font-size: 5rem;
+  margin-bottom: 24px;
+}
+
+.empty-state h3 {
+  font-size: 2rem;
+  color: #1a1a1a;
+  margin-bottom: 12px;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+  color: #666;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.dashboard-nav a.active {
+  color: #2196F3;
+  position: relative;
+}
+
+.dashboard-nav a.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #2196F3;
+  border-radius: 2px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .places-grid {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .recommendations-main {
+    padding: 40px 20px;
+  }
+
+  .page-title {
+    font-size: 2rem;
+  }
+
+  .search-input-group {
+    flex-direction: column;
+  }
+
+  .results-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .category-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 8px;
+  }
+
+  .filter-btn {
+    white-space: nowrap;
+  }
+
+  .places-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,15 @@
+# Core Flask dependencies
+flask
+flask-cors
+pyjwt
+bcrypt
+python-dotenv
+psycopg2-binary
+requests
+pydantic
+
+# For agents (lightweight)
+openai
+
+# NO heavy ML libraries - they exceed Vercel's 500MB limit
+# sentence-transformers, faiss-cpu, reportlab, Pillow are too large

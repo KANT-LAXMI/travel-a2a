@@ -10,6 +10,7 @@ const Login = () => {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -80,7 +81,7 @@ const Login = () => {
                 <label htmlFor="password">Password</label>
                 <div className="input-wrapper">
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     id="password"
                     name="password"
                     value={formData.password}
@@ -88,7 +89,13 @@ const Login = () => {
                     required
                     placeholder="••••••••"
                   />
-                  <span className="input-icon">👁️</span>
+                  <span 
+                    className="input-icon" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {showPassword ? '👁️' : '👁️'}
+                  </span>
                 </div>
                 <div className="forgot-password-link">
                   <Link to="/forgot-password" className="form-link">Forgot Password?</Link>
